@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Manager</title>
+  </head>
+  <body>
+    <h1>Personal Task Manager</h1>
+
+    <h2>Add Task</h2>
+
+    <form id="task-form">
+      <label for="title-input">Title</label>
+      <input id="title-input" type="text" />
+
+      <label for="status-select">Status</label>
+      <select id="status-select">
+        <option value="open">Open</option>
+        <option value="completed">Completed</option>
+      </select>
+
+      <label for="priority-select">Priority</label>
+      <select id="priority-select">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+
+      <button type="submit">Add Task</button>
+    </form>
+
+    <ul id="task-list"></ul>
+
+    <script src="app.js"></script>
+  </body>
+</html>
