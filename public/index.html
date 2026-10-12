@@ -30,6 +30,18 @@
       <button type="submit">Add Task</button>
     </form>
 
+    <h2>Tasks</h2>
+
+    <label for="search-input">Search</label>
+    <input id="search-input" type="text" placeholder="Search by title" />
+
+    <label for="filter-select">Status</label>
+    <select id="filter-select">
+      <option value="all">All</option>
+      <option value="open">Open</option>
+      <option value="completed">Completed</option>
+    </select>
+
     <ul id="task-list"></ul>
 
     <script src="app.js"></script>

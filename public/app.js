@@ -1,9 +1,17 @@
+// Select elements
 const taskList = document.querySelector("#task-list");
 const taskForm = document.querySelector("#task-form");
 const titleInput = document.querySelector("#title-input");
 const statusSelect = document.querySelector("#status-select");
 const prioritySelect = document.querySelector("#priority-select");
 
+const searchInput = document.querySelector("#search-input");
+const filterSelect = document.querySelector("#filter-select");
+
+// Shared data
+let allTasks = [];
+
+// Rendering
 function renderTask(task) {
   const li = document.createElement("li");
 
@@ -43,6 +51,39 @@ function renderTask(task) {
   taskList.appendChild(li);
 }
 
+function displayTasks() {
+  taskList.innerHTML = "";
+
+  const searchText = searchInput.value.toLowerCase();
+  const selectedStatus = filterSelect.value;
+
+  const filteredTasks = allTasks.filter(function (task) {
+    const matchesSearch = task.title.toLowerCase().includes(searchText);
+
+    const matchesStatus =
+      selectedStatus === "all" || task.status === selectedStatus;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  for (let task of filteredTasks) {
+    renderTask(task);
+  }
+}
+
+// Server functions
+function fetchTasks() {
+  fetch("/api/tasks")
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (tasks) {
+      allTasks = tasks;
+
+      displayTasks();
+    });
+}
+
 function toggleStatus(task) {
   let newStatus;
 
@@ -52,7 +93,7 @@ function toggleStatus(task) {
     newStatus = "completed";
   }
 
-  const updatedtask = {
+  const updatedTask = {
     title: task.title,
     status: newStatus,
     priority: task.priority,
@@ -63,9 +104,8 @@ function toggleStatus(task) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(updatedtask),
+    body: JSON.stringify(updatedTask),
   }).then(function () {
-    taskList.innerHTML = "";
     fetchTasks();
   });
 }
@@ -86,9 +126,9 @@ function editTask(task) {
     return;
   }
 
-  const updatedtask = {
+  const updatedTask = {
     title: newTitle,
-    status: newStatus,
+    status: task.status,
     priority: newPriority,
   };
 
@@ -97,13 +137,12 @@ function editTask(task) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(updatedtask),
+    body: JSON.stringify(updatedTask),
   })
     .then(function (response) {
       return response.json();
     })
     .then(function () {
-      taskList.innerHTML = "";
       fetchTasks();
     });
 }
@@ -116,27 +155,11 @@ function deleteTask(id) {
       return response.json();
     })
     .then(function () {
-      taskList.innerHTML = "";
       fetchTasks();
     });
 }
 
-function fetchTasks() {
-  fetch("/api/tasks")
-    .then(function (response) {
-      return response.json();
-    })
-    .then(function (tasks) {
-      console.log(tasks);
-
-      taskList.innerHTML = "";
-
-      for (let task of tasks) {
-        renderTask(task);
-      }
-    });
-}
-
+// Event listeners
 taskForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -156,11 +179,19 @@ taskForm.addEventListener("submit", function (event) {
     .then(function (response) {
       return response.json();
     })
-    .then(function (task) {
-      renderTask(task);
-
+    .then(function () {
       taskForm.reset();
+      fetchTasks();
     });
 });
 
+searchInput.addEventListener("input", function () {
+  displayTasks();
+});
+
+filterSelect.addEventListener("change", function () {
+  displayTasks();
+});
+
+// Initial
 fetchTasks();
