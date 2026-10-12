@@ -64,6 +64,26 @@ app.delete("/api/tasks/:id", function (req, res) {
   });
 });
 
+app.put("/api/tasks/:id", function (req, res) {
+  const id = Number(req.params.id);
+
+  const task = tasks.find(function (task) {
+    return task.id === id;
+  });
+
+  if (!task) {
+    return res.status(404).json({
+      message: "Task not found",
+    });
+  }
+
+  task.title = req.body.title;
+  task.status = req.body.status;
+  task.priority = req.body.priority;
+
+  res.json(task);
+});
+
 app.listen(PORT, function () {
   console.log("Server is running on http://localhost:" + PORT);
 });
