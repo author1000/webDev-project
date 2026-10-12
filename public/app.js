@@ -4,6 +4,19 @@ const titleInput = document.querySelector("#title-input");
 const statusSelect = document.querySelector("#status-select");
 const prioritySelect = document.querySelector("#priority-select");
 
+function deleteTask(id) {
+  fetch("/api/tasks/" + id, {
+    method: "DELETE",
+  })
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function () {
+      taskList.innerHTML = "";
+      fetchTasks();
+    });
+}
+
 function fetchTasks() {
   fetch("/api/tasks")
     .then(function (response) {
@@ -21,6 +34,16 @@ function fetchTasks() {
           task.status +
           " | Priority: " +
           task.priority;
+
+        const deleteButton = document.createElement("button");
+
+        deleteButton.textContent = "Delete";
+
+        deleteButton.addEventListener("click", function () {
+          deleteTask(task.id);
+        });
+
+        li.appendChild(deleteButton);
 
         taskList.appendChild(li);
       }

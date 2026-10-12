@@ -44,6 +44,26 @@ app.post("/api/tasks", function (req, res) {
   res.json(newTask);
 });
 
+app.delete("/api/tasks/:id", function (req, res) {
+  const id = Number(req.params.id);
+
+  const index = tasks.findIndex(function (task) {
+    return task.id === id;
+  });
+
+  if (index === -1) {
+    return res.status(404).json({
+      message: "Task not found",
+    });
+  }
+
+  tasks.splice(index, 1);
+
+  res.json({
+    message: "Task deleted",
+  });
+});
+
 app.listen(PORT, function () {
   console.log("Server is running on http://localhost:" + PORT);
 });
