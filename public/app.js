@@ -4,9 +4,9 @@ const taskForm = document.querySelector("#task-form");
 const titleInput = document.querySelector("#title-input");
 const statusSelect = document.querySelector("#status-select");
 const prioritySelect = document.querySelector("#priority-select");
-
 const searchInput = document.querySelector("#search-input");
 const filterSelect = document.querySelector("#filter-select");
+const message = document.querySelector("#message");
 
 // Shared data
 let allTasks = [];
@@ -66,6 +66,13 @@ function displayTasks() {
     return matchesSearch && matchesStatus;
   });
 
+  if (filteredTasks.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No tasks found.";
+    taskList.appendChild(li);
+    return;
+  }
+
   for (let task of filteredTasks) {
     renderTask(task);
   }
@@ -73,14 +80,24 @@ function displayTasks() {
 
 // Server functions
 function fetchTasks() {
+  message.textContent = "Loading tasks...";
+
   fetch("/api/tasks")
     .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Could not load tasks.");
+      }
+
       return response.json();
     })
     .then(function (tasks) {
       allTasks = tasks;
+      message.textContent = "";
 
       displayTasks();
+    })
+    .catch(function (error) {
+      message.textContent = error.message;
     });
 }
 
@@ -163,8 +180,13 @@ function deleteTask(id) {
 taskForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
+  if (titleInput.value.trim() === "") {
+    message.textContent = "Title is required.";
+    return;
+  }
+
   const newTask = {
-    title: titleInput.value,
+    title: titleInput.value.trim(),
     status: statusSelect.value,
     priority: prioritySelect.value,
   };
@@ -177,11 +199,19 @@ taskForm.addEventListener("submit", function (event) {
     body: JSON.stringify(newTask),
   })
     .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Could not add task.");
+      }
+
       return response.json();
     })
     .then(function () {
+      message.textContent = "Task added successfully.";
       taskForm.reset();
       fetchTasks();
+    })
+    .catch(function (error) {
+      message.textContent = error.message;
     });
 });
 
