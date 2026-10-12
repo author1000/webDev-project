@@ -4,6 +4,25 @@ const titleInput = document.querySelector("#title-input");
 const statusSelect = document.querySelector("#status-select");
 const prioritySelect = document.querySelector("#priority-select");
 
+function renderTask(task) {
+  const li = document.createElement("li");
+
+  li.textContent =
+    task.title + " | Status: " + task.status + " | Priority: " + task.priority;
+
+  const deleteButton = document.createElement("button");
+
+  deleteButton.textContent = "Delete";
+
+  deleteButton.addEventListener("click", function () {
+    deleteTask(task.id);
+  });
+
+  li.appendChild(deleteButton);
+
+  taskList.appendChild(li);
+}
+
 function deleteTask(id) {
   fetch("/api/tasks/" + id, {
     method: "DELETE",
@@ -25,27 +44,10 @@ function fetchTasks() {
     .then(function (tasks) {
       console.log(tasks);
 
+      taskList.innerHTML = "";
+
       for (let task of tasks) {
-        const li = document.createElement("li");
-
-        li.textContent =
-          task.title +
-          " | Status: " +
-          task.status +
-          " | Priority: " +
-          task.priority;
-
-        const deleteButton = document.createElement("button");
-
-        deleteButton.textContent = "Delete";
-
-        deleteButton.addEventListener("click", function () {
-          deleteTask(task.id);
-        });
-
-        li.appendChild(deleteButton);
-
-        taskList.appendChild(li);
+        renderTask(task);
       }
     });
 }
@@ -70,16 +72,7 @@ taskForm.addEventListener("submit", function (event) {
       return response.json();
     })
     .then(function (task) {
-      const li = document.createElement("li");
-
-      li.textContent =
-        task.title +
-        " | Status: " +
-        task.status +
-        " | Priority: " +
-        task.priority;
-
-      taskList.appendChild(li);
+      renderTask(task);
 
       taskForm.reset();
     });
