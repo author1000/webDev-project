@@ -18,27 +18,50 @@ client
   .connect()
   .then(function () {
     console.log("Connected to PostgreSQL");
-  })
-  .catch(function (error) {
-    console.error("Database connection error:", error);
-  });
 
-client
-  .query(
-    `
-    CREATE TABLE IF NOT EXISTS tasks (
+    return client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL
+      );
+    `);
+  })
+  .then(function () {
+    console.log("Users table is ready");
+
+    return client.query(`
+      CREATE TABLE IF NOT EXISTS tasks (
       id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
       status VARCHAR(50) NOT NULL,
       priority VARCHAR(50) NOT NULL
-    );
-  `,
-  )
+      );
+    `);
+  })
   .then(function () {
     console.log("Tasks table is ready");
+
+    return client.query(`
+      ALTER TABLE tasks
+      ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);
+    `);
+  })
+  .then(function () {
+    console.log("Task-user relationship is ready");
+
+    return client.query(`
+      INSERT INTO users (username, password, role)
+      VALUES ('admin', 'jerome', 'patrick')
+      ON CONFLICT (username) DO NOTHING;
+    `);
+  })
+  .then(function () {
+    console.log("Test user is ready");
   })
   .catch(function (error) {
-    console.error("Error creating tasks table:", error);
+    console.error("Database setup error:", error);
   });
 
 app.use(express.json());
@@ -49,15 +72,16 @@ app.post("/api/tasks", function (req, res) {
   const title = req.body.title;
   const status = req.body.status;
   const priority = req.body.priority;
+  const userId = 1;
 
   client
     .query(
       `
-        INSERT INTO tasks (title, status, priority)
-        VALUES ($1, $2, $3)
+        INSERT INTO tasks (title, status, priority, user_id)
+        VALUES ($1, $2, $3, $4)
         RETURNING *;
       `,
-      [title, status, priority],
+      [title, status, priority, userId],
     )
     .then(function (result) {
       res.json(result.rows[0]);
@@ -72,8 +96,17 @@ app.post("/api/tasks", function (req, res) {
 });
 
 app.get("/api/tasks", function (req, res) {
+  const userId = 1;
+
   client
-    .query("SELECT * FROM tasks ORDER BY id;")
+    .query(
+      `
+        SELECT * FROM tasks
+        WHERE user_id = $1
+        ORDER BY id;
+      `,
+      [userId],
+    )
     .then(function (result) {
       res.json(result.rows);
     })
