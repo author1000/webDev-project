@@ -58,7 +58,7 @@ client
 
     return client.query(`
       INSERT INTO users (username, password, role)
-      VALUES ('testuser', 'abc123', 'user')
+      VALUES ('admin', 'admin', 'admin')
       ON CONFLICT (username) DO NOTHING;
     `);
   })
@@ -246,21 +246,37 @@ app.get("/api/tasks", requireLogin, function (req, res) {
 app.put("/api/tasks/:id", requireLogin, function (req, res) {
   const id = Number(req.params.id);
   const userId = req.user.id;
+  const role = req.user.role;
 
   const title = req.body.title;
   const status = req.body.status;
   const priority = req.body.priority;
 
-  client
-    .query(
-      `
+  let query;
+  let values;
+
+  if (role === "admin") {
+    query = `
+        UPDATE tasks
+        SET title = $1, status = $2, priority = $3
+        WHERE id = $4
+        RETURNING *;
+      `;
+
+    values = [title, status, priority, id];
+  } else {
+    query = `
         UPDATE tasks
         SET title = $1, status = $2, priority = $3
         WHERE id = $4 AND user_id = $5
         RETURNING *;
-      `,
-      [title, status, priority, id, userId],
-    )
+      `;
+
+    values = [title, status, priority, id, userId];
+  }
+
+  client
+    .query(query, values)
     .then(function (result) {
       if (result.rows.length === 0) {
         return res.status(404).json({
@@ -271,7 +287,7 @@ app.put("/api/tasks/:id", requireLogin, function (req, res) {
       res.json(result.rows[0]);
     })
     .catch(function (error) {
-      console.error("Error updating task:", error);
+      console.error("Error updating task", error);
 
       res.status(500).json({
         message: "Could not update task",
@@ -282,16 +298,31 @@ app.put("/api/tasks/:id", requireLogin, function (req, res) {
 app.delete("/api/tasks/:id", requireLogin, function (req, res) {
   const id = Number(req.params.id);
   const userId = req.user.id;
+  const role = req.user.role;
 
-  client
-    .query(
-      `
+  let query;
+  let values;
+
+  if (role === "admin") {
+    query = `
+        DELETE FROM tasks
+        WHERE id = $1
+        RETURNING *;
+      `;
+
+    values = [id];
+  } else {
+    query = `
         DELETE FROM tasks
         WHERE id = $1 AND user_id = $2
         RETURNING *;
-      `,
-      [id, userId],
-    )
+      `;
+
+    values = [id, userId];
+  }
+
+  client
+    .query(query, values)
     .then(function (result) {
       if (result.rows.length === 0) {
         return res.status(404).json({
