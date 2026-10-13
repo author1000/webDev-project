@@ -1,10 +1,15 @@
 const express = require("express");
 const path = require("path");
 const { Client } = require("pg");
+const cookieParser = require("cookie-parser");
+const crypto = require("crypto");
 
 const app = express();
 
 const PORT = 3000;
+
+const SECRET = "task-manager-secret";
+const sessions = {};
 
 const client = new Client({
   host: "localhost",
@@ -53,7 +58,7 @@ client
 
     return client.query(`
       INSERT INTO users (username, password, role)
-      VALUES ('admin', 'jerome', 'patrick')
+      VALUES ('testuser', 'abc123', 'user')
       ON CONFLICT (username) DO NOTHING;
     `);
   })
@@ -65,14 +70,110 @@ client
   });
 
 app.use(express.json());
+app.use(cookieParser(SECRET));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Login
+app.post("/api/login", function (req, res) {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  client
+    .query(
+      `
+        SELECT * FROM users
+        WHERE username = $1 AND password = $2;
+      `,
+      [username, password],
+    )
+    .then(function (result) {
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          message: "Invalid username or password",
+        });
+      }
+
+      const user = result.rows[0];
+
+      const token = crypto.randomBytes(64).toString("hex");
+
+      sessions[token] = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      };
+
+      res.cookie("authToken", token, {
+        signed: true,
+        httpOnly: true,
+      });
+
+      res.json({
+        message: "Login successful",
+        username: user.username,
+        role: user.role,
+      });
+    })
+    .catch(function (error) {
+      console.error("Login error:", error);
+
+      res.status(500).json({
+        message: "Could not log in",
+      });
+    });
+});
+
+// Logout
+app.post("/api/logout", function (req, res) {
+  const token = req.signedCookies.authToken;
+
+  if (token) {
+    delete sessions[token];
+  }
+
+  res.clearCookie("authToken");
+
+  res.json({
+    message: "Logout successful",
+  });
+});
+
+function requireLogin(req, res, next) {
+  const token = req.signedCookies.authToken;
+
+  if (!token || !sessions[token]) {
+    return res.status(401).json({
+      message: "You must be logged in",
+    });
+  }
+
+  req.user = sessions[token];
+
+  next();
+}
+
+app.get("/api/session", function (req, res) {
+  const token = req.signedCookies.authToken;
+
+  if (!token || !session[token]) {
+    return res.json({
+      loggedIn: false,
+    });
+  }
+
+  res.json({
+    loggedIn: true,
+    username: sessions[token].username,
+    role: sessions[token].role,
+  });
+});
+
 // CRUD operations
-app.post("/api/tasks", function (req, res) {
+app.post("/api/tasks", requireLogin, function (req, res) {
   const title = req.body.title;
   const status = req.body.status;
   const priority = req.body.priority;
-  const userId = 1;
+  const userId = req.user.id;
 
   client
     .query(
@@ -95,8 +196,8 @@ app.post("/api/tasks", function (req, res) {
     });
 });
 
-app.get("/api/tasks", function (req, res) {
-  const userId = 1;
+app.get("/api/tasks", requireLogin, function (req, res) {
+  const userId = req.user.id;
 
   client
     .query(
@@ -119,8 +220,9 @@ app.get("/api/tasks", function (req, res) {
     });
 });
 
-app.put("/api/tasks/:id", function (req, res) {
+app.put("/api/tasks/:id", requireLogin, function (req, res) {
   const id = Number(req.params.id);
+  const userId = req.user.id;
 
   const title = req.body.title;
   const status = req.body.status;
@@ -131,10 +233,10 @@ app.put("/api/tasks/:id", function (req, res) {
       `
         UPDATE tasks
         SET title = $1, status = $2, priority = $3
-        WHERE id = $4
+        WHERE id = $4 AND user_id = $5
         RETURNING *;
       `,
-      [title, status, priority, id],
+      [title, status, priority, id, userId],
     )
     .then(function (result) {
       if (result.rows.length === 0) {
@@ -154,17 +256,18 @@ app.put("/api/tasks/:id", function (req, res) {
     });
 });
 
-app.delete("/api/tasks/:id", function (req, res) {
+app.delete("/api/tasks/:id", requireLogin, function (req, res) {
   const id = Number(req.params.id);
+  const userId = req.user.id;
 
   client
     .query(
       `
         DELETE FROM tasks
-        WHERE id = $1
+        WHERE id = $1 AND user_id = $2
         RETURNING *;
       `,
-      [id],
+      [id, userId],
     )
     .then(function (result) {
       if (result.rows.length === 0) {

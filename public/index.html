@@ -5,46 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Task Manager</title>
   </head>
+
   <body>
     <h1>Personal Task Manager</h1>
 
-    <h2>Add Task</h2>
+    <h2>Login</h2>
 
-    <form id="task-form">
-      <label for="title-input">Title</label>
-      <input id="title-input" type="text" />
+    <form id="login-form">
+      <label for="username-input">Username</label>
+      <input id="username-input" type="text" />
 
-      <label for="status-select">Status</label>
-      <select id="status-select">
+      <label for="password-input">Password</label>
+      <input id="password-input" type="password" />
+
+      <button type="submit">Login</button>
+    </form>
+
+    <p id="login-message"></p>
+
+    <button id="logout-button" type="button">Logout</button>
+
+    <div id="task-section">
+      <h2>Add Task</h2>
+
+      <form id="task-form">
+        <label for="title-input">Title</label>
+        <input id="title-input" type="text" />
+
+        <label for="status-select">Status</label>
+        <select id="status-select">
+          <option value="open">Open</option>
+          <option value="completed">Completed</option>
+        </select>
+
+        <label for="priority-select">Priority</label>
+        <select id="priority-select">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+
+        <button type="submit">Add Task</button>
+      </form>
+
+      <h2>Tasks</h2>
+
+      <label for="search-input">Search</label>
+      <input id="search-input" type="text" placeholder="Search by title" />
+
+      <label for="filter-select">Status</label>
+      <select id="filter-select">
+        <option value="all">All</option>
         <option value="open">Open</option>
         <option value="completed">Completed</option>
       </select>
 
-      <label for="priority-select">Priority</label>
-      <select id="priority-select">
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
+      <p id="message"></p>
 
-      <button type="submit">Add Task</button>
-    </form>
-
-    <h2>Tasks</h2>
-
-    <label for="search-input">Search</label>
-    <input id="search-input" type="text" placeholder="Search by title" />
-
-    <label for="filter-select">Status</label>
-    <select id="filter-select">
-      <option value="all">All</option>
-      <option value="open">Open</option>
-      <option value="completed">Completed</option>
-    </select>
-
-    <p id="message"></p>
-
-    <ul id="task-list"></ul>
+      <ul id="task-list"></ul>
+    </div>
 
     <script src="app.js"></script>
   </body>

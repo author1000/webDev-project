@@ -7,6 +7,12 @@ const prioritySelect = document.querySelector("#priority-select");
 const searchInput = document.querySelector("#search-input");
 const filterSelect = document.querySelector("#filter-select");
 const message = document.querySelector("#message");
+const loginForm = document.querySelector("#login-form");
+const usernameInput = document.querySelector("#username-input");
+const passwordInput = document.querySelector("#password-input");
+const loginMessage = document.querySelector("#login-message");
+const taskSection = document.querySelector("#task-section");
+const logoutButton = document.querySelector("#logout-button");
 
 // Shared data
 let allTasks = [];
@@ -176,6 +182,31 @@ function deleteTask(id) {
     });
 }
 
+// Check session
+function checkSession() {
+  fetch("/api/session")
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (data) {
+      if (data.loggedIn) {
+        loginForm.style.display = "none";
+        logoutButton.style.display = "inline";
+        taskSection.style.display = "block";
+
+        loginMessage.textContent = "Logged in as " + data.username;
+
+        fetchTasks();
+      } else {
+        loginForm.style.display = "block";
+        logoutButton.style.display = "none";
+        taskSection.style.display = "none";
+
+        loginMessage.textContent = "Please log in.";
+      }
+    });
+}
+
 // Event listeners
 taskForm.addEventListener("submit", function (event) {
   event.preventDefault();
@@ -223,5 +254,62 @@ filterSelect.addEventListener("change", function () {
   displayTasks();
 });
 
+loginForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const loginData = {
+    username: usernameInput.value,
+    password: passwordInput.value,
+  };
+
+  fetch("/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(loginData),
+  })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Invalid username or password");
+      }
+
+      return response.json();
+    })
+    .then(function (data) {
+      loginMessage.textContent = "Logged in as " + data.username;
+
+      loginForm.reset();
+
+      loginForm.style.display = "none";
+      logoutButton.style.display = "inline";
+      taskSection.style.display = "block";
+
+      fetchTasks();
+    })
+    .catch(function (error) {
+      loginMessage.textContent = error.message;
+    });
+});
+
+logoutButton.addEventListener("click", function () {
+  fetch("/api/logout", {
+    method: "POST",
+  })
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (data) {
+      loginMessage.textContent = data.message;
+
+      allTasks = [];
+
+      checkSession();
+    })
+    .catch(function (error) {
+      loginMessage.textContent = error.message;
+    });
+});
+
 // Initial
-fetchTasks();
+checkSession();
