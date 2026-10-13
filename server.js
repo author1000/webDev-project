@@ -11,6 +11,10 @@ const PORT = 3000;
 const SECRET = "task-manager-secret";
 const sessions = {};
 
+function hashPassword(password) {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
+
 const client = new Client({
   host: "localhost",
   port: 5432,
@@ -56,11 +60,14 @@ client
   .then(function () {
     console.log("Task-user relationship is ready");
 
-    return client.query(`
+    return client.query(
+      `
       INSERT INTO users (username, password, role)
-      VALUES ('admin', 'admin', 'admin')
+      VALUES ('admin', $1, 'admin')
       ON CONFLICT (username) DO NOTHING;
-    `);
+    `,
+      [hashPassword("admin123")],
+    );
   })
   .then(function () {
     console.log("Test user is ready");
@@ -76,7 +83,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // Login
 app.post("/api/login", function (req, res) {
   const username = req.body.username;
-  const password = req.body.password;
+  const password = hashPassword(req.body.password);
 
   client
     .query(

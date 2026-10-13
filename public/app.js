@@ -24,6 +24,10 @@ function renderTask(task) {
   li.textContent =
     task.title + " | Status: " + task.status + " | Priority: " + task.priority;
 
+  if (task.username) {
+    li.textContent += " | User: " + task.username;
+  }
+
   const editButton = document.createElement("button");
   editButton.textContent = "Edit";
 
