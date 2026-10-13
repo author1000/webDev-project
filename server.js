@@ -198,26 +198,49 @@ app.post("/api/tasks", requireLogin, function (req, res) {
 
 app.get("/api/tasks", requireLogin, function (req, res) {
   const userId = req.user.id;
+  const role = req.user.role;
 
-  client
-    .query(
-      `
-        SELECT * FROM tasks
-        WHERE user_id = $1
-        ORDER BY id;
-      `,
-      [userId],
-    )
-    .then(function (result) {
-      res.json(result.rows);
-    })
-    .catch(function (error) {
-      console.error("Error fetching tasks:", error);
+  if (role === "admin") {
+    client
+      .query(
+        `
+          SELECT tasks.*, users.username
+          FROM tasks
+          JOIN users ON tasks.user_id = users.id
+          ORDER BY tasks.id;
+        `,
+      )
+      .then(function (result) {
+        res.json(result.rows);
+      })
+      .catch(function (error) {
+        console.error("Error fetching tasks:", error);
 
-      res.status(500).json({
-        message: "Could not load tasks",
+        res.status(500).json({
+          message: "Could not load tasks",
+        });
       });
-    });
+  } else {
+    client
+      .query(
+        `
+          SELECT * FROM tasks
+          WHERE user_id = $1
+          ORDER BY id;
+        `,
+        [userId],
+      )
+      .then(function (result) {
+        res.json(result.rows);
+      })
+      .catch(function (error) {
+        console.error("Error fetching tasks:", error);
+
+        res.status(500).json({
+          message: "Could not load tasks",
+        });
+      });
+  }
 });
 
 app.put("/api/tasks/:id", requireLogin, function (req, res) {
