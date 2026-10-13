@@ -1,0 +1,7 @@
+FROM postgres:latest
+
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD my-pwd-1234
+ENV POSTGRES_DB taskmanager
+
+EXPOSE 5432
