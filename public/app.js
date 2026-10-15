@@ -13,6 +13,7 @@ const passwordInput = document.querySelector("#password-input");
 const loginMessage = document.querySelector("#login-message");
 const taskSection = document.querySelector("#task-section");
 const logoutButton = document.querySelector("#logout-button");
+const userSelect = document.querySelector("#user-select");
 
 // Shared data
 let allTasks = [];
@@ -186,6 +187,32 @@ function deleteTask(id) {
     });
 }
 
+function fetchUsers() {
+  fetch("/api/users")
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Could not load users.");
+      }
+
+      return response.json();
+    })
+    .then(function (users) {
+      userSelect.innerHTML = "";
+
+      for (let user of users) {
+        const option = document.createElement("option");
+
+        option.value = user.id;
+        option.textContent = user.username;
+
+        userSelect.appendChild(option);
+      }
+    })
+    .catch(function (error) {
+      console.error(error);
+    });
+}
+
 // Check session
 function checkSession() {
   fetch("/api/session")
@@ -200,11 +227,22 @@ function checkSession() {
 
         loginMessage.textContent = "Logged in as " + data.username;
 
+        if (data.role === "admin") {
+          userSelect.style.display = "inline";
+          fetchUsers();
+        } else {
+          userSelect.style.display = "none";
+          userSelect.innerHTML = "";
+        }
+
         fetchTasks();
       } else {
         loginForm.style.display = "block";
         logoutButton.style.display = "none";
         taskSection.style.display = "none";
+
+        userSelect.style.display = "none";
+        userSelect.innerHTML = "";
 
         loginMessage.textContent = "Please log in.";
       }
@@ -224,6 +262,7 @@ taskForm.addEventListener("submit", function (event) {
     title: titleInput.value.trim(),
     status: statusSelect.value,
     priority: prioritySelect.value,
+    userId: userSelect.value,
   };
 
   fetch("/api/tasks", {
@@ -288,6 +327,14 @@ loginForm.addEventListener("submit", function (event) {
       loginForm.style.display = "none";
       logoutButton.style.display = "inline";
       taskSection.style.display = "block";
+
+      if (data.role === "admin") {
+        userSelect.style.display = "inline";
+        fetchUsers();
+      } else {
+        userSelect.style.display = "none";
+        userSelect.innerHTML = "";
+      }
 
       fetchTasks();
     })

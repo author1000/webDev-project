@@ -162,7 +162,7 @@ function requireLogin(req, res, next) {
 app.get("/api/session", function (req, res) {
   const token = req.signedCookies.authToken;
 
-  if (!token || !session[token]) {
+  if (!token || !sessions[token]) {
     return res.json({
       loggedIn: false,
     });
@@ -175,12 +175,44 @@ app.get("/api/session", function (req, res) {
   });
 });
 
+app.get("/api/users", requireLogin, function (req, res) {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      message: "Admin access required",
+    });
+  }
+
+  client
+    .query(
+      `
+      SELECT id, username, role
+      FROM users
+      ORDER BY username;
+    `,
+    )
+    .then(function (result) {
+      res.json(result.rows);
+    })
+    .catch(function (error) {
+      console.error("Error fetching users:", error);
+
+      res.status(500).json({
+        message: "Could not load users",
+      });
+    });
+});
+
 // CRUD operations
 app.post("/api/tasks", requireLogin, function (req, res) {
   const title = req.body.title;
   const status = req.body.status;
   const priority = req.body.priority;
-  const userId = req.user.id;
+
+  let userId = req.user.id;
+
+  if (req.user.role === "admin" && req.body.userId) {
+    userId = Number(req.body.userId);
+  }
 
   client
     .query(
