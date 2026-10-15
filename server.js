@@ -70,6 +70,18 @@ client
     );
   })
   .then(function () {
+    console.log("Admin user is ready");
+
+    return client.query(
+      `
+        INSERT INTO users (username, password, role)
+        VALUES ('testuser', $1, 'user')
+        ON CONFLICT (username) DO NOTHING;
+      `,
+      [hashPassword("abc123")],
+    );
+  })
+  .then(function () {
     console.log("Test user is ready");
   })
   .catch(function (error) {
@@ -113,6 +125,7 @@ app.post("/api/login", function (req, res) {
       res.cookie("authToken", token, {
         signed: true,
         httpOnly: true,
+        sameSite: "lax",
       });
 
       res.json({
@@ -208,6 +221,24 @@ app.post("/api/tasks", requireLogin, function (req, res) {
   const status = req.body.status;
   const priority = req.body.priority;
 
+  if (!title || title.trim() === "") {
+    return res.status(400).json({
+      message: "Title is required",
+    });
+  }
+
+  if (status !== "open" && status !== "completed") {
+    return res.status(400).json({
+      message: "Invalid status",
+    });
+  }
+
+  if (priority !== "low" && priority !== "medium" && priority !== "high") {
+    return res.status(400).json({
+      message: "Invalid priority",
+    });
+  }
+
   let userId = req.user.id;
 
   if (req.user.role === "admin" && req.body.userId) {
@@ -221,7 +252,7 @@ app.post("/api/tasks", requireLogin, function (req, res) {
         VALUES ($1, $2, $3, $4)
         RETURNING *;
       `,
-      [title, status, priority, userId],
+      [title.trim(), status, priority, userId],
     )
     .then(function (result) {
       res.json(result.rows[0]);
@@ -291,6 +322,24 @@ app.put("/api/tasks/:id", requireLogin, function (req, res) {
   const status = req.body.status;
   const priority = req.body.priority;
 
+  if (!title || title.trim() === "") {
+    return res.status(400).json({
+      message: "Title is required",
+    });
+  }
+
+  if (status !== "open" && status !== "completed") {
+    return res.status(400).json({
+      message: "Invalid status",
+    });
+  }
+
+  if (priority !== "low" && priority !== "medium" && priority !== "high") {
+    return res.status(400).json({
+      message: "Invalid priority",
+    });
+  }
+
   let query;
   let values;
 
@@ -302,7 +351,7 @@ app.put("/api/tasks/:id", requireLogin, function (req, res) {
         RETURNING *;
       `;
 
-    values = [title, status, priority, id];
+    values = [title.trim(), status, priority, id];
   } else {
     query = `
         UPDATE tasks
@@ -311,7 +360,7 @@ app.put("/api/tasks/:id", requireLogin, function (req, res) {
         RETURNING *;
       `;
 
-    values = [title, status, priority, id, userId];
+    values = [title.trim(), status, priority, id, userId];
   }
 
   client
