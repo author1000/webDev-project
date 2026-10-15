@@ -133,9 +133,21 @@ function toggleStatus(task) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(updatedTask),
-  }).then(function () {
-    fetchTasks();
-  });
+  })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Could not update task status.");
+      }
+
+      return response.json();
+    })
+    .then(function () {
+      message.textContent = "Task status updated successfully.";
+      fetchTasks();
+    })
+    .catch(function (error) {
+      message.textContent = error.message;
+    });
 }
 
 function editTask(task) {
@@ -168,10 +180,18 @@ function editTask(task) {
     body: JSON.stringify(updatedTask),
   })
     .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Could not update task.");
+      }
+
       return response.json();
     })
     .then(function () {
+      message.textContent = "Task updated successfully.";
       fetchTasks();
+    })
+    .catch(function (error) {
+      message.textContent = error.message;
     });
 }
 
@@ -180,10 +200,18 @@ function deleteTask(id) {
     method: "DELETE",
   })
     .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Could not delete task.");
+      }
+
       return response.json();
     })
     .then(function () {
+      message.textContent = "Task deleted successfully.";
       fetchTasks();
+    })
+    .catch(function (error) {
+      message.textContent = error.message;
     });
 }
 
