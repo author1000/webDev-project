@@ -14,6 +14,7 @@ const loginMessage = document.querySelector("#login-message");
 const taskSection = document.querySelector("#task-section");
 const logoutButton = document.querySelector("#logout-button");
 const userSelect = document.querySelector("#user-select");
+const userField = document.querySelector("#user-field");
 
 // Shared data
 let allTasks = [];
@@ -256,10 +257,10 @@ function checkSession() {
         loginMessage.textContent = "Logged in as " + data.username;
 
         if (data.role === "admin") {
-          userSelect.style.display = "inline";
+          userField.style.display = "inline";
           fetchUsers();
         } else {
-          userSelect.style.display = "none";
+          userField.style.display = "none";
           userSelect.innerHTML = "";
         }
 
@@ -269,7 +270,7 @@ function checkSession() {
         logoutButton.style.display = "none";
         taskSection.style.display = "none";
 
-        userSelect.style.display = "none";
+        userField.style.display = "none";
         userSelect.innerHTML = "";
 
         loginMessage.textContent = "Please log in.";
@@ -357,10 +358,10 @@ loginForm.addEventListener("submit", function (event) {
       taskSection.style.display = "block";
 
       if (data.role === "admin") {
-        userSelect.style.display = "inline";
+        userField.style.display = "inline";
         fetchUsers();
       } else {
-        userSelect.style.display = "none";
+        userField.style.display = "none";
         userSelect.innerHTML = "";
       }
 
